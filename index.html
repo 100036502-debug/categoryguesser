@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Krillion — the rarest answer wins</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a1628">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Krillion">
+<style>
+:root{
+  --bg:#0a1628;--surface:#111f36;--surface-2:#16243d;--border:#243652;
+  --text:#e8f0ff;--dim:#7a8fa8;--dim-2:#4a5b78;
+  --blue:#4a9eff;--blue-d:#2d7dd6;--gold:#ffb347;--gold-d:#e8952c;
+  --danger:#ff6b6b;--success:#4ade80;
+  --plankton:#6b7a8f;--clever:#8b6fb8;--schooler:#4a9eff;
+  --rare:#3fb8c4;--deep:#e8952c;--krillion:#ffb347;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;
+  overscroll-behavior:none;
+}
+.locked{overflow:hidden}
+
+/* Lock screen */
+#lock-screen{
+  position:fixed;inset:0;z-index:500;padding:20px;
+  background:radial-gradient(ellipse at top,#16243d 0%,#0a1628 60%);
+  display:flex;align-items:center;justify-content:center;
+}
+.lock-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:44px 36px;max-width:400px;width:100%;
+  text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6);
+}
+.lock-icon{font-size:3rem;margin-bottom:16px}
+.lock-box h1{
+  font-size:1.8rem;font-weight:700;letter-spacing:-.5px;margin-bottom:6px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.lock-box p{color:var(--dim);font-size:.85rem;margin-bottom:24px;line-height:1.5}
+.lock-box input{
+  width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:14px 16px;border-radius:12px;font-family:inherit;font-size:1rem;
+  outline:none;margin-bottom:12px;text-align:center;transition:border .2s;
+}
+.lock-box input:focus{border-color:var(--blue)}
+.lock-err{color:var(--danger);font-size:.78rem;min-height:18px;margin-bottom:12px}
+
+/* Buttons */
+button{font-family:inherit;cursor:pointer;transition:.15s}
+.btn-primary{
+  background:var(--blue);color:#fff;border:none;padding:14px 32px;
+  border-radius:24px;font-size:.95rem;font-weight:600;letter-spacing:.02em;
+}
+.btn-primary:hover{background:var(--blue-d);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-secondary{
+  background:transparent;color:var(--dim);border:1px solid var(--border);
+  padding:14px 28px;border-radius:24px;font-size:.9rem;font-weight:500;
+}
+.btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
+
+/* App shell */
+#app{display:none;flex:1;flex-direction:column;min-height:100vh}
+.top-bar{
+  padding:18px 24px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);gap:12px;
+}
+.brand{font-size:1.2rem;font-weight:700;letter-spacing:-.3px}
+.brand span{
+  background:linear-gradient(135deg,var(--blue),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.top-right{display:flex;align-items:center;gap:10px}
+.user-chip{
+  background:var(--surface);border:1px solid var(--border);padding:7px 14px;
+  border-radius:16px;font-size:.78rem;color:var(--dim);cursor:pointer;
+  white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;
+}
+.user-chip:hover{border-color:var(--blue);color:var(--blue)}
+.icon-btn{
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:1rem;padding:0;
+}
+.icon-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* Main */
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 24px;width:100%}
+.view{display:none;width:100%;max-width:640px;margin:0 auto}
+.view.on{display:block}
+
+/* Start view */
+.start-card{text-align:center;padding:20px 0}
+.start-card h2{
+  font-size:2.2rem;font-weight:700;letter-spacing:-.8px;line-height:1.15;margin-bottom:14px;
+}
+.start-card h2 .grad{
+  background:linear-gradient(135deg,var(--blue) 20%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.start-card p{color:var(--dim);font-size:1rem;line-height:1.6;margin-bottom:10px;max-width:460px;margin-left:auto;margin-right:auto}
+.start-card .rules{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:20px 24px;margin:28px 0;text-align:left;
+}
+.start-card .rules h3{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--dim);margin-bottom:14px;font-weight:600;
+}
+.rules-row{
+  display:flex;align-items:center;gap:14px;padding:8px 0;font-size:.9rem;
+}
+.rules-row .swatch{
+  width:12px;height:12px;border-radius:50%;flex-shrink:0;
+}
+.rules-row .label{flex:1;color:var(--text)}
+.rules-row .pts{font-weight:600;font-variant-numeric:tabular-nums;color:var(--dim);font-size:.85rem}
+
+/* Play view */
+.play-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;gap:12px;
+}
+.round-pips{display:flex;gap:6px}
+.pip{
+  width:32px;height:4px;background:var(--surface-2);border-radius:2px;
+  transition:background .3s;
+}
+.pip.done{background:var(--blue)}
+.pip.current{background:var(--gold)}
+.score-tag{
+  font-size:.85rem;color:var(--dim);font-variant-numeric:tabular-nums;
+}
+.score-tag b{color:var(--gold);font-weight:700}
+
+.prompt-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px 28px;margin-bottom:20px;min-height:180px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.prompt-label{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--dim);margin-bottom:14px;font-weight:600;
+}
+.prompt-text{
+  font-size:1.5rem;font-weight:600;line-height:1.3;letter-spacing:-.3px;
+}
+
+.timer-bar{
+  height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;
+  margin-bottom:20px;
+}
+.timer-fill{
+  height:100%;background:var(--blue);border-radius:2px;
+  transition:width .1s linear;
+}
+.timer-fill.warn{background:var(--gold)}
+.timer-fill.crit{background:var(--danger)}
+
+.answer-row{display:flex;gap:10px}
+.answer-row input{
+  flex:1;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:16px 18px;border-radius:14px;
+  font-family:inherit;font-size:1rem;outline:none;transition:border .15s;
+}
+.answer-row input:focus{border-color:var(--blue)}
+.answer-row input:disabled{opacity:.4}
+.answer-row button{
+  background:var(--blue);color:#fff;border:none;padding:16px 22px;
+  border-radius:14px;font-size:1rem;font-weight:600;
+}
+.answer-row button:hover:not(:disabled){background:var(--blue-d)}
+.answer-row button:disabled{opacity:.4;cursor:not-allowed}
+
+.feedback{
+  margin-top:16px;padding:18px 20px;border-radius:14px;
+  border:1px solid var(--border);background:var(--surface);
+  display:none;
+}
+.feedback.on{display:block;animation:slideUp .3s ease}
+.feedback.invalid{border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.08)}
+.feedback.valid{border-color:rgba(74,158,255,.3)}
+.feedback-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-bottom:8px;flex-wrap:wrap;
+}
+.feedback-tier{font-size:1rem;font-weight:700}
+.feedback-score{
+  font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.feedback-note{font-size:.85rem;color:var(--dim);line-height:1.5}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Results view */
+.results-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:36px 32px;text-align:center;
+}
+.results-card h2{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--dim);margin-bottom:10px;font-weight:600;
+}
+.big-score{
+  font-size:4rem;font-weight:800;line-height:1;margin-bottom:6px;
+  background:linear-gradient(135deg,var(--blue),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-variant-numeric:tabular-nums;
+}
+.big-score-max{font-size:1rem;color:var(--dim-2);margin-bottom:28px}
+.answer-list{text-align:left;margin:24px 0}
+.answer-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);font-size:.9rem;
+}
+.answer-item:last-child{border-bottom:none}
+.answer-item .text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.answer-item .prompt-s{color:var(--dim);font-size:.75rem;display:block;margin-bottom:2px}
+.answer-item .val{font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0}
+.results-actions{display:flex;gap:10px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+
+/* Leaderboard */
+.leaderboard-list{margin:20px 0}
+.lb-row{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  background:var(--surface-2);border-radius:12px;margin-bottom:6px;
+  font-size:.9rem;border:1px solid transparent;
+}
+.lb-row.me{border-color:var(--blue);background:rgba(74,158,255,.08)}
+.lb-rank{
+  width:28px;height:28px;border-radius:50%;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  font-size:.78rem;flex-shrink:0;color:var(--dim);
+}
+.lb-rank.gold{background:var(--gold);color:var(--bg)}
+.lb-rank.silver{background:#c0c8d4;color:var(--bg)}
+.lb-rank.bronze{background:#cd7f32;color:var(--bg)}
+.lb-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-weight:700;font-variant-numeric:tabular-nums;color:var(--gold)}
+.lb-empty{text-align:center;color:var(--dim);padding:40px 20px;font-size:.9rem}
+
+/* Modal */
+.modal-back{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px;
+}
+.modal-back.on{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px 28px;max-width:480px;width:100%;position:relative;
+  max-height:90vh;overflow-y:auto;
+}
+.modal h2{
+  font-size:1.4rem;font-weight:700;margin-bottom:6px;letter-spacing:-.3px;
+}
+.modal .sub{color:var(--dim);font-size:.85rem;margin-bottom:20px}
+.modal-close{
+  position:absolute;top:16px;right:16px;width:32px;height:32px;
+  border-radius:50%;background:var(--surface-2);border:none;color:var(--text);
+  font-size:1rem;display:flex;align-items:center;justify-content:center;padding:0;
+}
+.modal-close:hover{background:var(--danger);color:#fff}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:12px 22px;border-radius:24px;font-size:.85rem;opacity:0;
+  transition:.3s;pointer-events:none;z-index:300;box-shadow:0 10px 40px rgba(0,0,0,.5);
+  max-width:90vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:600px){
+  .start-card h2{font-size:1.8rem}
+  .prompt-text{font-size:1.25rem}
+  .prompt-card{padding:26px 22px;min-height:150px}
+  main{padding:20px 16px}
+  .results-card{padding:28px 22px}
+  .big-score{font-size:3rem}
+}
+</style>
+</head>
+<body class="locked">
+
+<!-- Lock screen -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-icon">🌊</div>
+    <h1>Krillion</h1>
+    <p>The rarest correct answer wins.<br>Enter the code to dive.</p>
+    <input type="password" id="lock-input" placeholder="Access code" autocomplete="off" autofocus>
+    <div class="lock-err" id="lock-err"></div>
+    <button class="btn-primary" style="width:100%" onclick="tryUnlock()">Enter</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="top-bar">
+    <div class="brand"><span>Krillion</span></div>
+    <div class="top-right">
+      <span class="user-chip" id="user-chip" title="Change your name">Anonymous</span>
+      <button class="icon-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- Start -->
+    <div class="view on" id="view-start">
+      <div class="start-card">
+        <h2>Name the answer<br><span class="grad">nobody else would.</span></h2>
+        <p>Five prompts. Thirty seconds each. The AI scores every answer from 1 to 1000 based on how rare it is — the more obscure your correct answer, the higher you climb.</p>
+
+        <div class="rules">
+          <h3>The tiers</h3>
+          <div class="rules-row"><div class="swatch" style="background:var(--plankton)"></div><div class="label">Plankton</div><div class="pts">1–150</div></div>
+          <div class="rules-row"><div class="swatch" style="background:var(--clever)"></div><div class="label">Too Clever</div><div class="pts">151–300</div></div>
+          <div class="rules-row"><div class="swatch" style="background:var(--schooler)"></div><div class="label">Schooler</div><div class="pts">301–500</div></div>
+          <div class="rules-row"><div class="swatch" style="background:var(--rare)"></div><div class="label">Rare</div><div class="pts">501–750</div></div>
+          <div class="rules-row"><div class="swatch" style="background:var(--deep)"></div><div class="label">Deep Cut</div><div class="pts">751–950</div></div>
+          <div class="rules-row"><div class="swatch" style="background:var(--krillion)"></div><div class="label">One in a Krillion</div><div class="pts">951–1000</div></div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;padding:16px" onclick="startRound()">Start dive</button>
+      </div>
+    </div>
+
+    <!-- Play -->
+    <div class="view" id="view-play">
+      <div class="play-head">
+        <div class="round-pips" id="pips"></div>
+        <div class="score-tag">Score: <b id="running-score">0</b></div>
+      </div>
+
+      <div class="prompt-card">
+        <div class="prompt-label" id="prompt-label">Prompt 1 of 5</div>
+        <div class="prompt-text" id="prompt-text">…</div>
+      </div>
+
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+
+      <div class="answer-row">
+        <input type="text" id="answer-input" placeholder="Type your answer…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="80">
+        <button id="submit-btn" onclick="submitAnswer()">Go</button>
+      </div>
+
+      <div class="feedback" id="feedback">
+        <div class="feedback-head">
+          <div class="feedback-tier" id="feedback-tier"></div>
+          <div class="feedback-score" id="feedback-score"></div>
+        </div>
+        <div class="feedback-note" id="feedback-note"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="view" id="view-results">
+      <div class="results-card">
+        <h2>Dive complete</h2>
+        <div class="big-score" id="final-score">0</div>
+        <div class="big-score-max">out of 5000</div>
+        <div class="answer-list" id="answer-list"></div>
+        <div class="results-actions">
+          <button class="btn-secondary" onclick="showView('start')">Play again</button>
+          <button class="btn-primary" onclick="openLeaderboard()">Leaderboard</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Leaderboard modal -->
+<div class="modal-back" id="lb-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLeaderboard()">✕</button>
+    <h2>Top dives</h2>
+    <p class="sub">Best score per player, all-time.</p>
+    <div class="leaderboard-list" id="lb-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+const ROUND_SIZE = 5;
+const TIME_LIMIT = 30;
+
+const TIER_COLORS = {
+  'Plankton': 'var(--plankton)',
+  'Too Clever': 'var(--clever)',
+  'Schooler': 'var(--schooler)',
+  'Rare': 'var(--rare)',
+  'Deep Cut': 'var(--deep)',
+  'One in a Krillion': 'var(--krillion)',
+};
+
+let state = {
+  prompts: [],
+  current: 0,
+  scores: [],
+  answers: [],
+  total: 0,
+  timeLeft: 0,
+  timerId: null,
+  accepting: false,
+  wasValid: false,
+};
+
+// ---------- utilities ----------
+function $(id) { return document.getElementById(id); }
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('on'), 2600);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function getUser() { return localStorage.getItem('kr_name') || 'Anonymous'; }
+function setUser(n) {
+  const clean = (n || 'Anonymous').trim().slice(0, 24) || 'Anonymous';
+  localStorage.setItem('kr_name', clean);
+  $('user-chip').textContent = clean;
+}
+
+// ---------- lock ----------
+async function tryUnlock() {
+  const val = $('lock-input').value;
+  const err = $('lock-err');
+  err.textContent = '';
+  if (!val) { err.textContent = 'Enter the access code.'; return; }
+
+  try {
+    const res = await fetch(`${API}/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: val }),
+      credentials: 'same-origin',
+    });
+    const data = await res.json();
+    if (data && data.unlocked) unlockApp();
+    else { err.textContent = 'Incorrect access code.'; $('lock-input').value = ''; }
+  } catch (e) {
+    err.textContent = 'Could not verify. Try again.';
+  }
+}
+$('lock-input').addEventListener('keypress', e => { if (e.key === 'Enter') tryUnlock(); });
+
+function unlockApp() {
+  $('lock-screen').style.display = 'none';
+  $('app').style.display = 'flex';
+  document.body.classList.remove('locked');
+  setUser(getUser());
+  if (!localStorage.getItem('kr_name')) {
+    const n = prompt('What should we call you on the leaderboard?', '');
+    if (n !== null) setUser(n);
+  }
+}
+
+(async function checkSession() {
+  try {
+    const res = await fetch(`${API}/verify-code`, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (data && data.unlocked) { unlockApp(); return; }
+  } catch (e) {}
+  $('lock-input').focus();
+})();
+
+$('user-chip').addEventListener('click', () => {
+  const n = prompt('Your name:', getUser());
+  if (n !== null) setUser(n);
+});
+
+// ---------- views ----------
+function showView(name) {
+  ['start', 'play', 'results'].forEach(v => {
+    $('view-' + v).classList.toggle('on', v === name);
+  });
+}
+
+// ---------- round ----------
+async function startRound() {
+  showView('play');
+  $('pips').innerHTML = '';
+  $('running-score').textContent = '0';
+  $('feedback').classList.remove('on');
+
+  state = {
+    prompts: [],
+    current: 0,
+    scores: [],
+    answers: [],
+    total: 0,
+    timeLeft: 0,
+    timerId: null,
+    accepting: false,
+    wasValid: false,
+  };
+
+  try {
+    const res = await fetch(`${API}/new-round`);
+    const data = await res.json();
+    if (!data.prompts || !data.prompts.length) throw new Error('No prompts');
+    state.prompts = data.prompts;
+  } catch (e) {
+    toast('Could not start round. Try again.');
+    showView('start');
+    return;
+  }
+
+  renderPips();
+  showPrompt(0);
+}
+
+function renderPips() {
+  const el = $('pips');
+  el.innerHTML = state.prompts.map((_, i) => {
+    let cls = 'pip';
+    if (i < state.current) cls += ' done';
+    else if (i === state.current) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function showPrompt(index) {
+  state.current = index;
+  state.answers[index] = state.answers[index] || '';
+  state.scores[index] = state.scores[index] || 0;
+
+  $('prompt-label').textContent = `Prompt ${index + 1} of ${ROUND_SIZE}`;
+  $('prompt-text').textContent = state.prompts[index];
+  $('answer-input').value = '';
+  $('answer-input').disabled = false;
+  $('submit-btn').disabled = false;
+  $('feedback').classList.remove('on');
+  $('feedback').classList.remove('valid', 'invalid');
+  renderPips();
+
+  state.accepting = true;
+  state.wasValid = false;
+  startTimer();
+  $('answer-input').focus();
+}
+
+function startTimer() {
+  stopTimer();
+  state.timeLeft = TIME_LIMIT;
+  updateTimerUI();
+  state.timerId = setInterval(() => {
+    state.timeLeft -= 0.1;
+    updateTimerUI();
+    if (state.timeLeft <= 0) {
+      stopTimer();
+      timeUp();
+    }
+  }, 100);
+}
+function stopTimer() {
+  if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+}
+function updateTimerUI() {
+  const pct = Math.max(0, state.timeLeft / TIME_LIMIT);
+  const fill = $('timer-fill');
+  fill.style.width = (pct * 100) + '%';
+  fill.classList.toggle('warn', pct <= 0.5 && pct > 0.2);
+  fill.classList.toggle('crit', pct <= 0.2);
+}
+
+function timeUp() {
+  state.accepting = false;
+  $('answer-input').disabled = true;
+  $('submit-btn').disabled = true;
+
+  if (!state.wasValid) {
+    state.scores[state.current] = 0;
+    state.answers[state.current] = state.answers[state.current] || '(no answer)';
+    showFeedback({ valid: false, reason: 'Time ran out.', tier: 'No answer', score: 0 });
+    setTimeout(nextPrompt, 1400);
+  }
+}
+
+async function submitAnswer() {
+  if (!state.accepting) return;
+  const input = $('answer-input');
+  const value = input.value.trim();
+  if (!value) return;
+
+  state.accepting = false;
+  $('submit-btn').disabled = true;
+  input.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/score-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ prompt: state.prompts[state.current], answer: value }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Scoring failed');
+
+    if (!data.valid) {
+      // Invalid — don't score, allow another attempt
+      state.accepting = true;
+      $('submit-btn').disabled = false;
+      input.disabled = false;
+      input.select();
+      showFeedback({ valid: false, reason: data.reason || 'That does not fit the prompt.' });
+      return;
+    }
+
+    // Valid — lock it in
+    state.wasValid = true;
+    stopTimer();
+    state.scores[state.current] = data.score;
+    state.answers[state.current] = value;
+    state.total += data.score;
+    $('running-score').textContent = state.total.toLocaleString();
+    showFeedback({ valid: true, tier: data.tier, score: data.score, note: data.note });
+    setTimeout(nextPrompt, 2200);
+  } catch (err) {
+    // Re-enable so the player can retry
+    state.accepting = true;
+    $('submit-btn').disabled = false;
+    input.disabled = false;
+    showFeedback({ valid: false, reason: 'Scoring failed. Try again.' });
+  }
+}
+
+function showFeedback({ valid, reason, tier, score, note }) {
+  const fb = $('feedback');
+  fb.classList.add('on');
+  fb.classList.toggle('valid', !!valid);
+  fb.classList.toggle('invalid', !valid);
+
+  if (valid) {
+    $('feedback-tier').textContent = tier;
+    $('feedback-tier').style.color = TIER_COLORS[tier] || 'var(--text)';
+    $('feedback-score').textContent = '+' + score;
+    $('feedback-score').style.color = TIER_COLORS[tier] || 'var(--gold)';
+    $('feedback-note').textContent = note || '';
+  } else {
+    $('feedback-tier').textContent = 'Not counted';
+    $('feedback-tier').style.color = 'var(--danger)';
+    $('feedback-score').textContent = '';
+    $('feedback-note').textContent = reason || '';
+  }
+}
+
+function nextPrompt() {
+  if (state.current < ROUND_SIZE - 1) {
+    showPrompt(state.current + 1);
+  } else {
+    finishRound();
+  }
+}
+
+$('answer-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') submitAnswer();
+});
+
+// ---------- finish ----------
+async function finishRound() {
+  stopTimer();
+  showView('results');
+  $('final-score').textContent = state.total.toLocaleString();
+
+  const list = $('answer-list');
+  list.innerHTML = state.prompts.map((p, i) => {
+    const ans = state.answers[i] || '—';
+    const sc = state.scores[i] || 0;
+    return `<div class="answer-item">
+      <div class="text"><span class="prompt-s">${escapeHtml(p)}</span>${escapeHtml(ans)}</div>
+      <div class="val" style="color:${sc > 0 ? 'var(--gold)' : 'var(--dim-2)'}">${sc}</div>
+    </div>`;
+  }).join('');
+
+  // Auto-submit to leaderboard
+  try {
+    await fetch(`${API}/leaderboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ name: getUser(), score: state.total }),
+    });
+  } catch (e) {}
+}
+
+// ---------- leaderboard ----------
+async function openLeaderboard() {
+  $('lb-modal').classList.add('on');
+  const list = $('lb-list');
+  list.innerHTML = '<div class="lb-empty">Loading…</div>';
+
+  try {
+    const res = await fetch(`${API}/leaderboard`, { credentials: 'same-origin' });
+    const entries = await res.json();
+    if (!entries.length) {
+      list.innerHTML = '<div class="lb-empty">No dives yet. Be the first.</div>';
+      return;
+    }
+    const me = getUser();
+    list.innerHTML = entries.map((e, i) => {
+      const rank = i + 1;
+      let rankCls = 'lb-rank';
+      if (rank === 1) rankCls += ' gold';
+      else if (rank === 2) rankCls += ' silver';
+      else if (rank === 3) rankCls += ' bronze';
+      const isMe = e.name === me ? ' me' : '';
+      return `<div class="lb-row${isMe}">
+        <div class="${rankCls}">${rank}</div>
+        <div class="lb-name">${escapeHtml(e.name)}</div>
+        <div class="lb-score">${e.score.toLocaleString()}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="lb-empty">Could not load leaderboard.</div>';
+  }
+}
+function closeLeaderboard() { $('lb-modal').classList.remove('on'); }
+$('lb-modal').addEventListener('click', e => { if (e.target.id === 'lb-modal') closeLeaderboard(); });
+
+// ---------- PWA ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
