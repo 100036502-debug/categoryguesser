@@ -280,6 +280,106 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 
 }
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ---------- DIVE ANIMATION ---------- */
+.dive-overlay{
+  position:fixed;inset:0;z-index:400;
+  display:none;overflow:hidden;
+  background:linear-gradient(180deg,
+    #7ec8ff 0%,
+    #4a9eff 12%,
+    #2d5a8f 40%,
+    #1a3260 65%,
+    #0a1628 88%,
+    #050b16 100%);
+  pointer-events:auto;
+}
+.dive-overlay.on{display:block;animation:diveIn .25s ease-out}
+.dive-overlay.out{animation:diveOut .4s ease-in forwards}
+@keyframes diveIn{from{opacity:0}to{opacity:1}}
+@keyframes diveOut{from{opacity:1}to{opacity:0}}
+
+.dive-depth{
+  position:absolute;
+  top:56px;left:50%;transform:translateX(-50%);
+  font-size:2.4rem;font-weight:800;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-1px;
+  text-shadow:0 2px 16px rgba(0,0,0,.55);
+  z-index:3;
+}
+.dive-depth .unit{
+  font-size:1rem;font-weight:600;
+  opacity:.55;margin-left:6px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  vertical-align:middle;
+}
+
+.dive-label{
+  position:absolute;
+  top:24px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.75);
+  font-size:.7rem;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+  font-weight:600;
+  text-shadow:0 2px 8px rgba(0,0,0,.5);
+  z-index:3;
+  transition:opacity .3s;
+}
+
+.dive-bubbles{
+  position:absolute;inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:1;
+}
+.bubble{
+  position:absolute;
+  border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,
+    rgba(255,255,255,.95) 0%,
+    rgba(255,255,255,.35) 45%,
+    rgba(200,230,255,.1) 75%,
+    rgba(255,255,255,0) 100%);
+  animation:bubbleRise linear forwards;
+  will-change:transform, opacity;
+}
+@keyframes bubbleRise{
+  0%{transform:translate(0,0) scale(.6);opacity:0}
+  12%{opacity:1}
+  88%{opacity:1}
+  100%{transform:translate(var(--drift,0), -110vh) scale(1.15);opacity:0}
+}
+
+.dive-sub{
+  position:absolute;
+  left:50%;
+  top:-15%;
+  transform:translateX(-50%);
+  width:160px;
+  animation:subDive 2s cubic-bezier(.55,.05,.45,.95) forwards;
+  filter:drop-shadow(0 12px 24px rgba(0,0,0,.5));
+  z-index:2;
+  will-change:top;
+}
+@keyframes subDive{
+  0%{top:-15%}
+  8%{top:8%}
+  100%{top:78%}
+}
+.dive-sub svg{
+  display:block;
+  width:100%;
+  height:auto;
+  animation:subBob 1.6s ease-in-out infinite alternate;
+}
+@keyframes subBob{
+  from{transform:translateY(-4px) rotate(-1.2deg)}
+  to{transform:translateY(4px) rotate(1.2deg)}
+}
+
 @media (max-width:600px){
   .start-card h2{font-size:1.8rem}
   .prompt-text{font-size:1.25rem}
@@ -287,6 +387,9 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 
   main{padding:20px 16px}
   .results-card{padding:28px 22px}
   .big-score{font-size:3rem}
+  .dive-sub{width:120px}
+  .dive-depth{font-size:1.9rem;top:48px}
+  .dive-label{font-size:.65rem}
 }
 </style>
 </head>
@@ -389,12 +492,76 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 
   </div>
 </div>
 
+<!-- Dive overlay -->
+<div class="dive-overlay" id="dive-overlay">
+  <div class="dive-label" id="dive-label">Diving</div>
+  <div class="dive-depth" id="dive-depth">0<span class="unit">m</span></div>
+  <div class="dive-bubbles" id="dive-bubbles"></div>
+  <div class="dive-sub" id="dive-sub">
+    <svg viewBox="0 0 180 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffd580"/>
+          <stop offset="0.5" stop-color="#ffb347"/>
+          <stop offset="1" stop-color="#d17d1a"/>
+        </linearGradient>
+        <radialGradient id="porthole" cx="0.35" cy="0.35" r="0.7">
+          <stop offset="0" stop-color="#a8d4ff" stop-opacity=".95"/>
+          <stop offset="0.6" stop-color="#4a9eff" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#1a3a6b"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Propeller (stern, left) -->
+      <g transform="translate(15, 40)">
+        <ellipse cx="0" cy="-14" rx="3" ry="10" fill="#e8952c" opacity=".9"/>
+        <ellipse cx="0" cy="14" rx="3" ry="10" fill="#e8952c" opacity=".9"/>
+        <ellipse cx="0" cy="0" rx="8" ry="3" fill="#c07820"/>
+      </g>
+
+      <!-- Shaft -->
+      <rect x="20" y="37.5" width="18" height="5" fill="#c07820"/>
+
+      <!-- Body -->
+      <ellipse cx="100" cy="40" rx="70" ry="24" fill="url(#subGrad)"/>
+
+      <!-- Bow accent -->
+      <ellipse cx="165" cy="40" rx="4" ry="13" fill="#ffd580" opacity=".7"/>
+
+      <!-- Conning tower -->
+      <rect x="78" y="12" width="32" height="16" rx="5" fill="#e8952c"/>
+      <rect x="82" y="15" width="24" height="4" rx="2" fill="#c07820" opacity=".5"/>
+
+      <!-- Periscope -->
+      <rect x="92" y="0" width="5" height="14" fill="#e8952c"/>
+      <rect x="92" y="0" width="14" height="4" fill="#e8952c"/>
+
+      <!-- Portholes -->
+      <circle cx="70" cy="42" r="8.5" fill="#0a1628"/>
+      <circle cx="70" cy="42" r="6" fill="url(#porthole)"/>
+      <circle cx="70" cy="42" r="2.5" fill="#e8f4ff" opacity=".85"/>
+
+      <circle cx="105" cy="42" r="8.5" fill="#0a1628"/>
+      <circle cx="105" cy="42" r="6" fill="url(#porthole)"/>
+      <circle cx="105" cy="42" r="2.5" fill="#e8f4ff" opacity=".85"/>
+
+      <circle cx="138" cy="42" r="7" fill="#0a1628"/>
+      <circle cx="138" cy="42" r="4.8" fill="url(#porthole)"/>
+      <circle cx="138" cy="42" r="2" fill="#e8f4ff" opacity=".85"/>
+
+      <!-- Top highlight -->
+      <ellipse cx="100" cy="27" rx="55" ry="3.5" fill="#ffe9b8" opacity=".45"/>
+    </svg>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const API = '/api';
 const ROUND_SIZE = 5;
 const TIME_LIMIT = 30;
+const DIVE_DURATION = 2000; // ms for the submarine to descend
 
 const TIER_COLORS = {
   'Plankton': 'var(--plankton)',
@@ -491,15 +658,124 @@ function showView(name) {
   });
 }
 
+// ---------- dive animation ----------
+let diveTimers = [];
+let diveBubbleTimer = null;
+
+function restartAnimation(el, animation) {
+  if (!el) return;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = animation;
+}
+
+function spawnBubble() {
+  const container = $('dive-bubbles');
+  if (!container) return;
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = 4 + Math.random() * 14;
+  const x = 25 + Math.random() * 50; // 25% - 75%
+  const duration = 1.4 + Math.random() * 1.6;
+  const drift = (Math.random() - 0.5) * 60;
+  b.style.width = size + 'px';
+  b.style.height = size + 'px';
+  b.style.left = x + '%';
+  b.style.bottom = '-40px';
+  b.style.animationDuration = duration + 's';
+  b.style.setProperty('--drift', drift + 'px');
+  container.appendChild(b);
+  setTimeout(() => { if (b.parentNode) b.parentNode.removeChild(b); }, duration * 1000 + 200);
+}
+
+function animateDepthCounter() {
+  const el = $('dive-depth');
+  if (!el) return;
+  const target = 3840;
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / DIVE_DURATION);
+    const eased = 1 - Math.pow(1 - t, 1.8);
+    const val = Math.round(target * eased);
+    el.innerHTML = val.toLocaleString() + '<span class="unit">m</span>';
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function playDiveAnimation() {
+  return new Promise((resolve) => {
+    const overlay = $('dive-overlay');
+    const sub = $('dive-sub');
+    const label = $('dive-label');
+
+    // Reset
+    overlay.classList.remove('out');
+    overlay.classList.add('on');
+    $('dive-bubbles').innerHTML = '';
+    label.textContent = 'Diving';
+    label.style.opacity = '1';
+
+    // Reset sub animation
+    restartAnimation(sub, `subDive ${DIVE_DURATION}ms cubic-bezier(.55,.05,.45,.95) forwards`);
+    const subSvg = sub.querySelector('svg');
+    if (subSvg) {
+      subSvg.style.animation = 'none';
+      void subSvg.offsetWidth;
+      subSvg.style.animation = 'subBob 1.6s ease-in-out infinite alternate';
+    }
+
+    // Depth counter
+    animateDepthCounter();
+
+    // Bubble spawner
+    clearInterval(diveBubbleTimer);
+    diveBubbleTimer = setInterval(spawnBubble, 90);
+
+    // Label phases
+    clearTimeout(diveTimers[0]);
+    diveTimers[0] = setTimeout(() => { label.textContent = 'Descending'; }, DIVE_DURATION * 0.35);
+    diveTimers[1] = setTimeout(() => { label.textContent = 'Preparing'; }, DIVE_DURATION * 0.7);
+
+    // Finish
+    diveTimers[2] = setTimeout(() => {
+      clearInterval(diveBubbleTimer);
+      diveBubbleTimer = null;
+      overlay.classList.add('out');
+      setTimeout(() => {
+        overlay.classList.remove('on', 'out');
+        $('dive-bubbles').innerHTML = '';
+        resolve();
+      }, 380);
+    }, DIVE_DURATION);
+  });
+}
+
 // ---------- round ----------
 async function startRound() {
-  showView('play');
-  $('pips').innerHTML = '';
-  $('running-score').textContent = '0';
-  $('feedback').classList.remove('on');
+  // Kick off the fetch in parallel with the dive animation
+  const fetchPromise = fetch(`${API}/new-round`, { credentials: 'same-origin' })
+    .then(r => r.json())
+    .catch(e => ({ error: e.message }));
+
+  // Play dive animation while we wait
+  await playDiveAnimation();
+
+  let data;
+  try {
+    data = await fetchPromise;
+  } catch (e) {
+    data = { error: e.message };
+  }
+
+  if (!data || !data.prompts || !data.prompts.length) {
+    toast('Could not start the dive. Try again.');
+    showView('start');
+    return;
+  }
 
   state = {
-    prompts: [],
+    prompts: data.prompts,
     current: 0,
     scores: [],
     answers: [],
@@ -510,17 +786,10 @@ async function startRound() {
     wasValid: false,
   };
 
-  try {
-    const res = await fetch(`${API}/new-round`);
-    const data = await res.json();
-    if (!data.prompts || !data.prompts.length) throw new Error('No prompts');
-    state.prompts = data.prompts;
-  } catch (e) {
-    toast('Could not start round. Try again.');
-    showView('start');
-    return;
-  }
-
+  $('pips').innerHTML = '';
+  $('running-score').textContent = '0';
+  $('feedback').classList.remove('on');
+  showView('play');
   renderPips();
   showPrompt(0);
 }
@@ -614,7 +883,6 @@ async function submitAnswer() {
     if (!res.ok) throw new Error(data.error || 'Scoring failed');
 
     if (!data.valid) {
-      // Invalid — don't score, allow another attempt
       state.accepting = true;
       $('submit-btn').disabled = false;
       input.disabled = false;
@@ -623,7 +891,6 @@ async function submitAnswer() {
       return;
     }
 
-    // Valid — lock it in
     state.wasValid = true;
     stopTimer();
     state.scores[state.current] = data.score;
@@ -633,7 +900,6 @@ async function submitAnswer() {
     showFeedback({ valid: true, tier: data.tier, score: data.score, note: data.note });
     setTimeout(nextPrompt, 2200);
   } catch (err) {
-    // Re-enable so the player can retry
     state.accepting = true;
     $('submit-btn').disabled = false;
     input.disabled = false;
@@ -689,7 +955,6 @@ async function finishRound() {
     </div>`;
   }).join('');
 
-  // Auto-submit to leaderboard
   try {
     await fetch(`${API}/leaderboard`, {
       method: 'POST',
